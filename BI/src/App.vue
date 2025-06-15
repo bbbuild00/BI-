@@ -899,7 +899,7 @@ const queryViralNews = async () => {
   }
 }
 
-// 获取推荐
+// 个性化推荐查询
 const getRecommendations = async () => {
   if (!recommendations.userId.trim()) {
     recommendations.error = '请输入用户ID'
@@ -910,62 +910,28 @@ const getRecommendations = async () => {
   recommendations.error = null
 
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const response = await fetch(`http://113.44.75.241:5000/api/recommendations/${recommendations.userId}`)
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`)
 
-    recommendations.list = [
-      {
-        id: 1,
-        date: '2019-06-20',
-        title: `为用户 ${recommendations.userId} 推荐: OpenAI发布最新GPT模型，性能提升300%`,
-        topic: '人工智能突破',
-        category: 'technology',
-        titleLength: 19,
-        contentLength: 650
-      },
-      {
-        id: 2,
-        date: '2019-06-20',
-        title: `为用户 ${recommendations.userId} 推荐: 量子计算机在药物发现领域取得重大进展`,
-        topic: '量子科技',
-        category: 'technology',
-        titleLength: 18,
-        contentLength: 720
-      },
-      {
-        id: 3,
-        date: '2019-06-19',
-        title: `为用户 ${recommendations.userId} 推荐: 新型电池技术让电动车续航提升至1000公里`,
-        topic: '清洁能源',
-        category: 'technology',
-        titleLength: 21,
-        contentLength: 580
-      },
-      {
-        id: 4,
-        date: '2019-06-19',
-        title: `为用户 ${recommendations.userId} 推荐: 脑机接口技术帮助瘫痪患者重新行走`,
-        topic: '医疗科技',
-        category: 'health',
-        titleLength: 16,
-        contentLength: 820
-      },
-      {
-        id: 5,
-        date: '2019-06-18',
-        title: `为用户 ${recommendations.userId} 推荐: 5G网络普及推动智慧城市建设加速`,
-        topic: '智慧城市',
-        category: 'technology',
-        titleLength: 17,
-        contentLength: 750
-      }
-    ]
+    const data = await response.json()
 
+    // 解析后端返回数据格式
+    recommendations.list = data.recommendations.map((item, index) => ({
+      id: index + 1,
+      date: new Date().toISOString().slice(0, 10), // 默认填今天的日期
+      title: `为用户 ${recommendations.userId} 推荐: ${item.title}`,
+      topic: item.topic || '未知话题',
+      category: item.category || 'unknown',
+      titleLength: item.title.length,
+      contentLength: 0 // 后端没有提供内容长度，可根据需要补充
+    }))
   } catch (error) {
     recommendations.error = '获取推荐失败: ' + error.message
   } finally {
     recommendations.loading = false
   }
 }
+
 
 // 新增：查询 SQL 执行日志
 const querySQLLogs = async () => {
